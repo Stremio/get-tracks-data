@@ -1,103 +1,63 @@
-const ebml = require('ts-ebml');
+const PARSERS = [
+    require('./mkv'),
+    require('./mp4'),
+];
 
-const decoder = new ebml.Decoder();
+const createParser = (parsers, buffer) => {
+    const parser = parsers.find(({ SIGNATURE, SIGNATURE_OFFSET }) => {
+        const signatureBuffer = Buffer.from(SIGNATURE, 'hex');
+        const bufferToCompare = buffer.subarray(
+            SIGNATURE_OFFSET,
+            signatureBuffer.length + SIGNATURE_OFFSET,
+        );
+        
+        return Buffer.compare(signatureBuffer, bufferToCompare) === 0;
+    });
 
-const TRACKS_ELEMENT_NAME = 'Tracks';
-
-const ELEMENT_NAMES_MAP = {
-    'TrackEntry': null,
-    'TrackNumber': 'id',
-    'TrackType': 'type',
-    'Language': 'lang',
-    'CodecID': 'codec',
-};
-
-const TRACK_TYPE_VALUE_MAP = {
-    1: 'video',
-    2: 'audio',
-    17: 'text',
-};
-
-const parseTrackElement = (element) => {
-    const name = ELEMENT_NAMES_MAP[element.name];
-
-    const parseValue = (value) => {
-        if (name === 'type')
-            return TRACK_TYPE_VALUE_MAP[value] ?? value;
-        return value;
-    };
-
-    return [name, parseValue(element.value)];
+    return parser && parser.create();
 };
 
 const getTracksData = (stream) => {
     return new Promise((resolve, reject) => {
-        let bufferSize = 0;
-        let bufferSizeLimit = 0;
-        const elements = [];
+        let parser = null;
 
-        const decodeData = (buffer) => {
-            try {
-                if (bufferSizeLimit > 0 && bufferSize >= bufferSizeLimit)
-                    return stream.destroy();
-
-                const decoded = decoder.decode(buffer);
-                const tracksElement = decoded.find(({ name }) => name === TRACKS_ELEMENT_NAME);
-                const decodedElements = decoded.filter(({ name }) => Object.keys(ELEMENT_NAMES_MAP).includes(name));
-
-                elements.push(decodedElements);
-
-                if (bufferSizeLimit === 0 && tracksElement)
-                    bufferSizeLimit = tracksElement.dataEnd;
-
-                bufferSize += buffer.byteLength;
-            } catch(e) {
-                stream.destroy();
-                reject(`Failed to decode file: ${e}`);
-            }
+        const onFinish = (tracks) => {
+            stream.destroy();
+            resolve(tracks);
         };
 
-        const parseData = () => {
-            try {
-                let trackIndex = 0;
-                const tracks = [];
-
-                elements
-                    .flat(1)
-                    .forEach((element) => {
-                        if (element.name === 'TrackEntry' && !element.isEnd) {
-                            tracks[trackIndex] = {
-                                id: null,
-                                type: null,
-                                codec: null,
-                                lang: null,
-                            };
-                        }
-
-                        if (element.name !== 'TrackEntry') {
-                            const [name, value] = parseTrackElement(element);
-                            tracks[trackIndex][name] = value;
-                        }
-
-                        if (element.name === 'TrackEntry' && element.isEnd) {
-                            trackIndex++;
-                        }
-                    });
-
-                resolve(tracks);
-            } catch(e) {
-                reject(`Failed to parse tracks data: ${e}`);
-            }
+        const onError = (error) => {
+            stream.destroy();
+            reject(error);
         };
 
-        const onError = (e) => {
-            reject(`Failed to read stream: ${e}`);
+        const onData = async (chunk) => {
+            const onSkip = (bytes) => {
+                stream.read(Math.min(1e+9, bytes));
+            };
+
+            parser = parser ?? createParser(PARSERS, chunk);
+
+            if (!parser)
+                return onError('This file type is not supported');
+
+            parser
+                .parse(chunk, onSkip)
+                .then(() => stream.destroy())
+                .catch(onError);
+        };
+
+        const onClose = async () => {
+            parser && parser
+                .finish()
+                .then(onFinish)
+                .catch(onError);
         };
 
         stream
             .on('error', onError)
-            .on('close', parseData)
-            .on('data', decodeData);
+            .on('close', onClose)
+            .on('data', onData);
     });
 };
 
