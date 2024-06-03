@@ -1,7 +1,5 @@
 const ebml = require('ts-ebml');
 
-const decoder = new ebml.Decoder();
-
 const TRACKS_ELEMENT_NAME = 'Tracks';
 
 const ELEMENT_NAMES_MAP = {
@@ -37,6 +35,7 @@ const create = () => {
     let bufferSize = 0;
     let bufferSizeLimit = 0;
     const elements = [];
+    const decoder = new ebml.Decoder();
 
     const parse = (buffer) => new Promise((resolve, reject) => {
         try {
