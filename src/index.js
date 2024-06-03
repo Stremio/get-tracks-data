@@ -17,9 +17,10 @@ const createParser = (parsers, buffer) => {
     return parser && parser.create();
 };
 
-const getTracksData = (stream) => {
+const getTracksData = (stream, options) => {
     return new Promise((resolve, reject) => {
         let parser = null;
+        let totalBytes = 0;
 
         const onFinish = (tracks) => {
             stream.destroy();
@@ -32,6 +33,13 @@ const getTracksData = (stream) => {
         };
 
         const onData = async (chunk) => {
+            if (options?.maxBytesLimit) {
+                totalBytes += chunk.length;
+
+                if (totalBytes >= options.maxBytesLimit)
+                    return onError(`Reached maxBytesLimit of ${options.maxBytesLimit}`);
+            }
+            
             const onSkip = (bytes) => {
                 stream.read(Math.min(1e+9, bytes));
             };
