@@ -14,6 +14,7 @@ getTracksData(stream)
         console.error(e);
     });
 ```
+
 Example of data returned:
 ```js
 [
@@ -21,4 +22,19 @@ Example of data returned:
   { id: 2, type: 'audio', lang: 'eng', codec: 'mp4a' },
   { id: 3, type: 'audio', lang: 'fra', codec: 'mp4a' }
 ]
+```
+
+## Options
+You can pass an options object:
+
+```js
+const options = {
+    maxBytesLimit: 1e+7, // Will destroy stream and reject the promise when this limit is reached on data read  
+};
+
+try {
+    await getTracksData(stream, options);
+} catch(e) {
+    console.error(e);
+}
 ```
