@@ -134,31 +134,30 @@ const create = () => {
                     })
                     .filter(([tkhdBox, mdiaBox]) => tkhdBox && mdiaBox)
                     .map(([tkhdBox, mdiaBox]) => {
-                        const header = parseTkhdBox(tkhdBox.data);
+                        const trackHeader = parseTkhdBox(tkhdBox.data);
                         const mdiaBoxes = parseBoxes(mdiaBox.data);
                         const mdhdBox = mdiaBoxes.find(({ name }) => name === 'mdhd');
                         const minfBox = mdiaBoxes.find(({ name }) => name === 'minf');
-                        return [header, mdhdBox, minfBox];
+                        return [trackHeader, mdhdBox, minfBox];
                     })
                     .filter(([, mdhdBox, minfBox]) => mdhdBox && minfBox)
-                    .map(([header, mdhdBox, minfBox]) => {
-                        const info = parseMdhdBox(mdhdBox.data);
+                    .map(([trackHeader, mdhdBox, minfBox]) => {
+                        const mediaHeader = parseMdhdBox(mdhdBox.data);
                         const minfBoxes = parseBoxes(minfBox.data);
-                        const type = minfBoxes.find(({ name }) => Object.keys(BOX_NAME_TYPE_MAP).includes(name));
+                        const typeHeader = minfBoxes.find(({ name }) => Object.keys(BOX_NAME_TYPE_MAP).includes(name));
                         const stblBox = minfBoxes.find(({ name }) => name === 'stbl');
-                        return [header, info, type, stblBox];
+                        return [trackHeader, mediaHeader, typeHeader, stblBox];
                     })
-                    .filter(([,, type, stblBox]) => type && stblBox)
-                    .map(([header, info, type, stblBox]) => {
+                    .filter(([,, typeHeader, stblBox]) => typeHeader && stblBox)
+                    .map(([trackHeader, mediaHeader, typeHeader, stblBox]) => {
                         const stblBoxes = parseBoxes(stblBox.data);
                         const stsdBox = stblBoxes.find(({ name }) => name === 'stsd');
-                        return [header, info, type, stsdBox];
+                        return [trackHeader, mediaHeader, typeHeader, stsdBox];
                     })
                     .filter(([,,, stsdBox]) => stsdBox)
-                    .map(([header, info, type, stsdBox]) => {
-                        const codecs = parseStsdBox(stsdBox.data);
-                        const codec = codecs.entries[0].name;
-                        return [header, info, type, codec];
+                    .map(([trackHeader, mediaHeader, typeHeader, stsdBox]) => {
+                        const sampleDescription = parseStsdBox(stsdBox.data);
+                        return [trackHeader, mediaHeader, typeHeader, sampleDescription];
                     });
 
                 resolve();
@@ -170,12 +169,19 @@ const create = () => {
 
     const finish = () => new Promise((resolve, reject) => {
         try {
-            const tracks = tracksData.map(([header, info, type, codec]) => ({
-                id: header.id,
-                type: BOX_NAME_TYPE_MAP[type.name],
-                lang: info.language,
-                codec,
-            }));
+            const tracks = tracksData.map(([trackHeader, mediaHeader, typeHeader, sampleDescription]) => {
+                const id = trackHeader.id
+                const type = BOX_NAME_TYPE_MAP[typeHeader.name];
+                const lang = mediaHeader.language === 'und' ? null : mediaHeader.language;
+                const codec = sampleDescription?.entries?.[0]?.name;
+
+                return {
+                    id,
+                    type,
+                    lang,
+                    codec,
+                };
+            });
 
             resolve(tracks);
         } catch(e) {

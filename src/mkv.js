@@ -23,6 +23,9 @@ const parseTrackElement = (element) => {
         if (name === 'type')
             return TRACK_TYPE_VALUE_MAP[value] ?? value;
 
+        if (name === 'lang')
+            return value === 'und' ? null : value;
+
         if (name === 'codec')
             return value
                 .replace('V_', '')
