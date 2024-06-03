@@ -22,6 +22,13 @@ const parseTrackElement = (element) => {
     const parseValue = (value) => {
         if (name === 'type')
             return TRACK_TYPE_VALUE_MAP[value] ?? value;
+
+        if (name === 'codec')
+            return value
+                .replace('V_', '')
+                .replace('A_', '')
+                .replace('S_', '');
+
         return value;
     };
 
