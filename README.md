@@ -1,26 +1,46 @@
 # get-tracks-data
 
-Allow you to get tracks data from video files from MKV and MP4 files.
+Get video / audio / subtitles tracks from MKV and MP4 files.
 
-## Example
+## Examples
+
+### File
+
+```js
+const path = require('path');
+const getTracksData = require('get-tracks-data');
+
+const file = path.resolve(__dirname, 'video.mkv');
+
+try {
+    const tracks = await getTracksData(file);
+    console.log(tracks);
+} catch (e) {
+    console.error(e);
+}
+```
+
+### Url
+
 ```js
 const getTracksData = require('get-tracks-data');
-const stream = fs.createReadStream(path.resolve(__dirname, 'video.mkv'));
 
-getTracksData(stream)
-    .then((data) => {
-        console.log(data);
-    }).catch((e) => {
-        console.error(e);
-    });
+const url = 'https://mywebsite.com/video.mp4';
+
+try {
+    const tracks = await getTracksData(url);
+    console.log(tracks);
+} catch (e) {
+    console.error(e);
+}
 ```
 
 Example of data returned:
 ```js
 [
-  { id: 1, type: 'video', lang: 'und', codec: 'avc1' },
-  { id: 2, type: 'audio', lang: 'eng', codec: 'mp4a' },
-  { id: 3, type: 'audio', lang: 'fra', codec: 'mp4a' }
+  { id: 1, type: 'video', lang: null, codec: 'MPEGH/ISO/HEVC' },
+  { id: 2, type: 'audio', lang: 'spa', codec: 'EAC3' },
+  { id: 3, type: 'text', lang: 'fre', codec: 'TEXT/UTF8' }
 ]
 ```
 
