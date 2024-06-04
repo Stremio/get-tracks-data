@@ -1,10 +1,14 @@
+const { createSteam } = require('./stream');
+
 const PARSERS = [
     require('./mkv'),
     require('./mp4'),
 ];
 
-const createParser = (parsers, buffer) => {
-    const parser = parsers.find(({ SIGNATURE, SIGNATURE_OFFSET }) => {
+const DEFAULT_CHUNK_SIZE = 10 * 1024 * 1024;
+
+const createParser = (buffer) => {
+    const parser = PARSERS.find(({ SIGNATURE, SIGNATURE_OFFSET }) => {
         const signatureBuffer = Buffer.from(SIGNATURE, 'hex');
         const bufferToCompare = buffer.subarray(
             SIGNATURE_OFFSET,
@@ -17,10 +21,18 @@ const createParser = (parsers, buffer) => {
     return parser && parser.create();
 };
 
-const getTracksData = (stream, options) => {
+const getTracksData = async (input, options) => {
+    const stream = await createSteam(input);
+
+    let parser = null;
+
     return new Promise((resolve, reject) => {
-        let parser = null;
-        let totalBytes = 0;
+        const onSkip = (start, end) => {
+            stream.pause();
+            stream.bytesOffset = start;
+            stream.chunkSize = end ?? DEFAULT_CHUNK_SIZE;
+            stream.resume(); 
+        };
 
         const onFinish = (tracks) => {
             stream.destroy();
@@ -33,18 +45,10 @@ const getTracksData = (stream, options) => {
         };
 
         const onData = async (chunk) => {
-            if (options?.maxBytesLimit) {
-                totalBytes += chunk.length;
+            if (stream.bytesRead >= options?.maxBytesLimit)
+                return onError(`Reached maxBytesLimit of ${options.maxBytesLimit}`);
 
-                if (totalBytes >= options.maxBytesLimit)
-                    return onError(`Reached maxBytesLimit of ${options.maxBytesLimit}`);
-            }
-            
-            const onSkip = (bytes) => {
-                stream.read(Math.min(1e+9, bytes));
-            };
-
-            parser = parser ?? createParser(PARSERS, chunk);
+            parser = parser ?? createParser(chunk);
 
             if (!parser)
                 return onError('This file type is not supported');

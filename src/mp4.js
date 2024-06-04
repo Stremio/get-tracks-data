@@ -105,21 +105,19 @@ const BOX_NAME_TYPE_MAP = {
 };
 
 const create = () => {
-    const chunks = [];
     let tracksData = [];
 
     const parse = (chunk, onSkip) => new Promise((resolve, reject) => {
         try {
-            chunks.push(chunk);
-
-            const buffer = Buffer.concat(chunks);
-            const boxes = parseBoxes(buffer);
-
+            const boxes = parseBoxes(chunk);
             const moovBox = boxes.find(({ name }) => name === 'moov');
             const mdatBox = boxes.find(({ name }) => name === 'mdat');
 
             if (!moovBox && mdatBox)
-                return onSkip(mdatBox.size - mdatBox.data.length);
+                return onSkip(mdatBox.offset + mdatBox.size);
+
+            if (moovBox && moovBox.data.length !== moovBox.dataSize)
+                return onSkip(moovBox.offset, moovBox.offset + moovBox.size);
 
             if (moovBox && moovBox.data.length === moovBox.dataSize) {
                 const moovBoxes = parseBoxes(moovBox.data);
