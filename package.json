@@ -16,14 +16,12 @@
     "type": "git",
     "url": "https://github.com/tymmesyde/get-tracks-data.git"
   },
-  "dependencies": {
-    "ts-ebml": "^3.0.1"
-  },
   "devDependencies": {
     "@babel/cli": "^7.24.5",
     "@babel/core": "^7.24.5",
     "@babel/preset-env": "^7.24.5",
     "core-js": "^3.37.1",
-    "esbuild": "^0.21.3"
+    "esbuild": "^0.21.3",
+    "ts-ebml": "^3.0.1"
   }
 }
