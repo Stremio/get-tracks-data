@@ -2,10 +2,13 @@
     "name": "get-tracks-data",
     "version": "0.5.0",
     "description": "Get video / audio / subtitles tracks from MKV and MP4 files.",
-    "main": "dist/index.js",
+    "type": "module",
+    "main": "./dist/index.cjs",
+    "module": "./dist/index.js",
+    "types": "./dist/index.d.ts",
     "scripts": {
         "prepublish": "npm run build",
-        "build": "babel src -d dist && esbuild dist/index.js --bundle --minify --platform=node --outfile=dist/index.js --allow-overwrite"
+        "build": "tsup"
     },
     "files": [
         "dist"
@@ -24,12 +27,20 @@
         "type": "git",
         "url": "https://github.com/tymmesyde/get-tracks-data.git"
     },
+    "exports": {
+        "import": {
+            "types": "./dist/index.d.ts",
+            "default": "./dist/index.js"
+        },
+        "require": "./dist/index.cjs"
+    },
     "devDependencies": {
-        "@babel/cli": "^7.24.5",
-        "@babel/core": "^7.24.5",
-        "@babel/preset-env": "^7.24.5",
-        "core-js": "^3.37.1",
-        "esbuild": "^0.21.3",
+        "@swc/core": "^1.5.25",
+        "@types/node": "^20.14.2",
+        "tsup": "^8.1.0",
+        "typescript": "^5.4.5"
+    },
+    "dependencies": {
         "ts-ebml": "^3.0.1"
     }
 }

@@ -1,68 +1,72 @@
-const { createSteam } = require('./stream');
+import { createStream } from './stream';
+import * as MKV from './mkv';
+import * as MP4 from './mp4';
+import type { Parser, Track } from './parser';
 
-const PARSERS = [
-    require('./mkv'),
-    require('./mp4'),
-];
-
+const PARSERS = [MKV, MP4];
 const DEFAULT_CHUNK_SIZE = 10 * 1024 * 1024;
 
-const createParser = (buffer) => {
+const useParser = (buffer: Buffer) => {
     const parser = PARSERS.find(({ SIGNATURE, SIGNATURE_OFFSET }) => {
         const signatureBuffer = Buffer.from(SIGNATURE, 'hex');
         const bufferToCompare = buffer.subarray(
             SIGNATURE_OFFSET,
             signatureBuffer.length + SIGNATURE_OFFSET,
         );
-        
+
         return Buffer.compare(signatureBuffer, bufferToCompare) === 0;
     });
 
     return parser && parser.create();
 };
 
-const getTracksData = async (input, options) => {
-    const stream = await createSteam(input);
+type Options = {
+    maxBytesLimit?: number
+};
 
-    let parser = null;
+const getTracksData = async (input: string, options?: Options) => {
+    const stream = await createStream(input);
 
-    return new Promise((resolve, reject) => {
-        const onSkip = (start, end) => {
+    let parser: Parser | undefined = undefined;
+    let decoded: any = null;
+
+    return new Promise<Track[]>((resolve, reject) => {
+        const onSkip = (start: number, end?: number) => {
             stream.pause();
             stream.bytesOffset = start;
             stream.chunkSize = end ?? DEFAULT_CHUNK_SIZE;
-            stream.resume(); 
+            stream.resume();
         };
 
-        const onFinish = (tracks) => {
+        const onDecoded = (data: any) => {
             stream.destroy();
-            resolve(tracks);
+            decoded = data;
         };
 
-        const onError = (error) => {
+        const onError = (reason: string) => {
             stream.destroy();
-            reject(error);
+            reject(reason);
         };
 
-        const onData = async (chunk) => {
-            if (stream.bytesRead >= options?.maxBytesLimit)
+        const onData = async (chunk: Buffer) => {
+            if (options?.maxBytesLimit && stream.bytesRead >= options.maxBytesLimit)
                 return onError(`Reached maxBytesLimit of ${options.maxBytesLimit}`);
 
-            parser = parser ?? createParser(chunk);
+            parser = parser ?? useParser(chunk);
 
             if (!parser)
                 return onError('This file type is not supported');
 
             parser
-                .parse(chunk, onSkip)
-                .then(() => stream.destroy())
+                .decode(chunk, onSkip)
+                .then(onDecoded)
                 .catch(onError);
         };
 
         const onClose = async () => {
             parser && parser
-                .finish()
-                .then(onFinish)
+                .format(decoded)
+                .then(resolve)
                 .catch(onError);
         };
 
@@ -73,4 +77,4 @@ const getTracksData = async (input, options) => {
     });
 };
 
-module.exports = getTracksData;
+export default getTracksData;
