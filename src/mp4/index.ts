@@ -11,6 +11,8 @@ const BOX_NAME_TYPE_MAP: Record<string, TrackType> = {
     'smhd': TrackType.Audio,
 };
 
+const MDHD_LANG_NULL_VALUES = ['und', '```'];
+
 const create = (): Parser => {
     const decode = (chunk: Buffer, onSkip: (start: number, end?: number) => void) => new Promise<BoxContainer>((resolve, reject) => {
         try {
@@ -70,7 +72,7 @@ const create = (): Parser => {
 
                 const id = TKHD.id;
                 const type = BOX_NAME_TYPE_MAP[tmhdBoxContainer.name];
-                const lang = MDHD.language === 'und' ? null : MDHD.language;
+                const lang = MDHD_LANG_NULL_VALUES.includes(MDHD.language) ? null : MDHD.language;
                 const codec = STSD?.entries?.[0]?.name;
 
                 const track: Track = {
