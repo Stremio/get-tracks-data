@@ -1,7 +1,8 @@
 import fs from 'fs';
+import http from 'http';
 import https from 'https';
 import { Readable } from 'stream';
-import type { IncomingMessage } from 'http';
+import type { IncomingMessage, OutgoingHttpHeaders } from 'http';
 
 const CONTENT_RANGE_REGEX = /bytes (\d+)-(\d+)\/(\d+)/;
 
@@ -14,7 +15,7 @@ const isUrl = (url: string) => {
     }
 };
 
-class HttpsStream extends Readable {
+class UrlStream extends Readable {
     private url: string;
     private contentLength: number;
     public bytesRead: number;
@@ -33,23 +34,15 @@ class HttpsStream extends Readable {
 
     _request = (range: number[]): Promise<IncomingMessage> => {
         return new Promise((resolve, reject) => {
-            const { hostname, pathname } = new URL(this.url);
+            const { protocol } = new URL(this.url);
 
-            const headers = {
+            const headers: OutgoingHttpHeaders = {
                 'range': `bytes=${range[0]}-${range[1]}`,
             };
 
-            const options = {
-                method: 'GET',
-                hostname,  
-                path: pathname,
-                headers,
-            };
-
-            https
-                .request(options, resolve)
-                .on('error', reject)
-                .end();
+            (protocol === 'http:' ? http : https)
+                .get(this.url, { headers }, resolve)
+                .on('error', reject);
         });
     }
 
@@ -160,11 +153,11 @@ class FileStream extends Readable {
 };
 
 const createStream = async (input: string) => {
-    return isUrl(input) ? new HttpsStream(input) : new FileStream(input);
+    return isUrl(input) ? new UrlStream(input) : new FileStream(input);
 };
 
 export {
     createStream,
-    HttpsStream,
+    UrlStream,
     FileStream,
 };
