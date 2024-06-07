@@ -1,4 +1,6 @@
 # get-tracks-data
+![Build](https://github.com/tymmesyde/get-tracks-data/workflows/Build/badge.svg)
+![NPM Version](https://img.shields.io/npm/v/get-tracks-data?logo=npm)
 
 Get video / audio / subtitles tracks from MKV and MP4 files.
 
