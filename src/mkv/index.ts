@@ -1,19 +1,40 @@
-import { Decoder } from 'ts-ebml';
-import type { EBMLElementDetail, MasterElement, ChildElementValue } from 'ts-ebml';
 import { TrackType } from '@/parser';
 import { Parser, Track } from '@/parser';
+import { bufferToInt, parseElements } from './utils';
+import type { Element } from './utils';
 
-const TRACKS_ELEMENT_NAME = 'Tracks';
+const parseTrackNumber = (trackNumber?: Element) => {
+    if (!trackNumber) return null;
 
-const ELEMENT_NAMES_MAP: Record<string, string | null> = {
-    'TrackEntry': null,
-    'TrackNumber': 'id',
-    'TrackType': 'type',
-    'Language': 'lang',
-    'CodecID': 'codec',
+    const id = trackNumber.data;
+    return bufferToInt(id);
 };
 
-const TRACK_TYPE_VALUE_MAP: Record<number, TrackType> = {
+const parseTrackType = (trackType?: Element) => {
+    if (!trackType) return null;
+
+    const type = trackType.data;
+    return TRACK_TYPE_VALUES[bufferToInt(type)];
+};
+
+const parseLanguage = (language?: Element) => {
+    if (!language) return null;
+
+    const lang = language.data.toString();
+    return lang === 'und' ? null : lang;
+};
+
+const parseCodecID = (codecID?: Element) => {
+    if (!codecID) return null;
+
+    const codec = codecID.data.toString();
+    return codec
+        .replace('V_', '')
+        .replace('A_', '')
+        .replace('S_', '');
+};
+
+const TRACK_TYPE_VALUES: Record<number, TrackType> = {
     1: TrackType.Video,
     2: TrackType.Audio,
     17: TrackType.Text,
@@ -23,77 +44,60 @@ const SIGNATURE = '1A45DFA3';
 const SIGNATURE_OFFSET = 0;
 
 const create = (): Parser => {
-    let bufferSize = 0;
-    let bufferSizeLimit = 0;
-    const elements: EBMLElementDetail[][] = [];
-    const decoder = new Decoder();
-
-    const decode = (buffer: Buffer) => new Promise<EBMLElementDetail[]>((resolve, reject) => {
+    const decode = (buffer: Buffer) => new Promise<Element>((resolve, reject) => {
         try {
-            if (bufferSizeLimit > 0 && bufferSize >= bufferSizeLimit)
-                return resolve(elements.flat(1));
+            const elements = parseElements(buffer);
 
-            const decoded = decoder.decode(buffer);
-            const tracksElement = decoded.find(({ name }) => name === TRACKS_ELEMENT_NAME);
-            const decodedElements = decoded.filter(({ name }) => Object.keys(ELEMENT_NAMES_MAP).includes(name));
+            const segment = elements.find(({ name }) => name === 'Segment');
+            if (!segment) return reject();
 
-            elements.push(decodedElements);
+            const segmentElements = parseElements(segment.data);
 
-            if (bufferSizeLimit === 0 && tracksElement)
-                bufferSizeLimit = tracksElement.dataEnd;
+            const tracks = segmentElements.find(({ name }) => name === 'Tracks');
+            if (!tracks) return reject();
 
-            bufferSize += buffer.byteLength;
+            resolve(tracks);
         } catch(e) {
             console.error(e);
             reject('Failed to decode buffer');
         }
     });
 
-    const format = (elements: EBMLElementDetail[]) => new Promise<Track[]>((resolve, reject) => {
+    const format = (element: Element) => new Promise<Track[]>((resolve, reject) => {
         try {
-            const tracks: Track[] = [];
-            let track = new Track();
+            const tracksTags = parseElements(element.data);
 
-            elements.forEach((element) => {
-                if (element.name === 'TrackEntry') {
-                    const { isEnd } = element as MasterElement;
-                    !isEnd ? track = new Track() : tracks.push(track);
-                }
+            const trackEntries = tracksTags.filter(({ name }) => name === 'TrackEntry');
+            if (!trackEntries) return reject();
 
-                if (element.name !== 'TrackEntry') {
-                    const childElement = element as ChildElementValue;
-                    const name = ELEMENT_NAMES_MAP[childElement.name] as keyof Track;
+            const tracks: Track[] = trackEntries
+                .map((trackEntry) => parseElements(trackEntry.data))
+                .map((trackEntryTags) => {
+                    const trackNumber = trackEntryTags.find(({ name }) => name === 'TrackNumber');
+                    const trackType = trackEntryTags.find(({ name }) => name === 'TrackType');
+                    const language = trackEntryTags.find(({ name }) => name === 'Language');
+                    const codecID = trackEntryTags.find(({ name }) => name === 'CodecID');
 
-                    const parseValue = (value: string | number) => {
-                        if (name === 'type' && typeof value === 'number')
-                            return TRACK_TYPE_VALUE_MAP[value] ?? value;
-
-                        if (name === 'lang')
-                            return value === 'und' ? null : value;
-
-                        if (name === 'codec' && typeof value === 'string')
-                            return value
-                                .replace('V_', '')
-                                .replace('A_', '')
-                                .replace('S_', '');
-
-                        return value;
+                    return {
+                        trackNumber,
+                        trackType,
+                        language,
+                        codecID,
                     };
+                })
+                .map(({ trackNumber, trackType, language, codecID }) => {
+                    const id = parseTrackNumber(trackNumber);
+                    const type = parseTrackType(trackType);
+                    const lang = parseLanguage(language);
+                    const codec = parseCodecID(codecID);
 
-                    const value = parseValue(childElement.value);
-
-                    switch(name) {
-                        case 'id':
-                            track.id = value as number;
-                        case 'type':
-                            track.type = value as TrackType;
-                        case 'lang':
-                            track.lang = value as string;
-                        case 'codec':
-                            track.codec = value as string;
-                    }
-                }
-            });
+                    return {
+                        id,
+                        type,
+                        lang,
+                        codec,
+                    };
+                });
 
             resolve(tracks);
         } catch(e) {
