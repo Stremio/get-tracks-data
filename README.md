@@ -2,6 +2,11 @@
 
 Get video / audio / subtitles tracks from MKV and MP4 files.
 
+## Installation
+```bash
+npm i get-tracks-data
+```
+
 ## Examples
 
 ### File
