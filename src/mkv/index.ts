@@ -76,19 +76,21 @@ const create = (): Parser => {
                     const trackNumber = trackEntryTags.find(({ name }) => name === 'TrackNumber');
                     const trackType = trackEntryTags.find(({ name }) => name === 'TrackType');
                     const language = trackEntryTags.find(({ name }) => name === 'Language');
+                    const languageBCP47 = trackEntryTags.find(({ name }) => name === 'LanguageBCP47');
                     const codecID = trackEntryTags.find(({ name }) => name === 'CodecID');
 
                     return {
                         trackNumber,
                         trackType,
                         language,
+                        languageBCP47,
                         codecID,
                     };
                 })
-                .map(({ trackNumber, trackType, language, codecID }) => {
+                .map(({ trackNumber, trackType, language, languageBCP47, codecID }) => {
                     const id = parseTrackNumber(trackNumber);
                     const type = parseTrackType(trackType);
-                    const lang = parseLanguage(language);
+                    const lang = parseLanguage(language) ?? parseLanguage(languageBCP47);
                     const codec = parseCodecID(codecID);
 
                     return {
