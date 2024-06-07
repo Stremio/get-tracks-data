@@ -1,0 +1,16 @@
+name: Release
+
+on:
+  release:
+    types: [published]
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Build
+      uses: ./.github/workflows/build.yml
+    - name: Publish
+      run: pnpm publish
+      env:
+        NODE_AUTH_TOKEN: ${{ secrets.NPM_PUBLISH_TOKEN }}
