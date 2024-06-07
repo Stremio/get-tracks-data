@@ -1,6 +1,6 @@
 {
     "name": "get-tracks-data",
-    "version": "0.5.0",
+    "version": "0.6.0",
     "description": "Get video / audio / subtitles tracks from MKV and MP4 files.",
     "type": "module",
     "main": "./dist/index.cjs",
