@@ -1,23 +1,13 @@
 import { createStream } from './stream';
-import * as MKV from './mkv';
-import * as MP4 from './mp4';
+import MKV from './mkv';
+import MP4 from './mp4';
 import type { Parser, Track } from './parser';
 
-const PARSERS = [MKV, MP4];
+const PARSERS = [new MKV(), new MP4()];
 const DEFAULT_CHUNK_SIZE = 10 * 1024 * 1024;
 
 const useParser = (buffer: Buffer) => {
-    const parser = PARSERS.find(({ SIGNATURE, SIGNATURE_OFFSET }) => {
-        const signatureBuffer = Buffer.from(SIGNATURE, 'hex');
-        const bufferToCompare = buffer.subarray(
-            SIGNATURE_OFFSET,
-            signatureBuffer.length + SIGNATURE_OFFSET,
-        );
-
-        return Buffer.compare(signatureBuffer, bufferToCompare) === 0;
-    });
-
-    return parser && parser.create();
+    return PARSERS.find((parser) => parser.compare(buffer));
 };
 
 type Options = {

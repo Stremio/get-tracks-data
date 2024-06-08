@@ -1,7 +1,7 @@
+import { Parser, TrackType } from '@/parser';
+import type { Track } from '@/parser';
 import { parseBoxes, parseMDHDBox, parseSTSDBox, parseTKHDBox } from './utils';
-import { TrackType } from '@/parser';
 import type { BoxContainer } from './utils';
-import type { Parser, Track } from '@/parser';
 
 const SIGNATURE = '66747970';
 const SIGNATURE_OFFSET = 4;
@@ -13,9 +13,13 @@ const BOX_NAME_TYPE_MAP: Record<string, TrackType> = {
 
 const MDHD_LANG_NULL_VALUES = ['und', '```'];
 
-const create = (): Parser => {
-    const decode = (chunk: Buffer, onSkip: (start: number, end?: number) => void) => new Promise<BoxContainer>((resolve, reject) => {
-        try {
+class MP4 extends Parser {
+    constructor() {
+        super(SIGNATURE, SIGNATURE_OFFSET);
+    }
+
+    _decode(chunk: Buffer, onSkip: (start: number, end?: number) => void) {
+        return new Promise<BoxContainer>((resolve) => {
             const boxes = parseBoxes(chunk);
             const moovBox = boxes.find(({ name }) => name === 'moov');
             const mdatBox = boxes.find(({ name }) => name === 'mdat');
@@ -28,15 +32,12 @@ const create = (): Parser => {
 
             if (moovBox && moovBox.data.length === moovBox.dataSize)
                 return resolve(moovBox);
-        } catch(e) {
-            console.error(e);
-            reject('Failed to decode buffer');
-        }
-    });
+        });
+    }
 
-    const format = (moovBox: BoxContainer) => new Promise<Track[]>((resolve, reject) => {
-        try {
-            const moovBoxes = parseBoxes(moovBox.data);
+    _format(decoded: BoxContainer) {
+        return new Promise<Track[]>((resolve) => {
+            const moovBoxes = parseBoxes(decoded.data);
             const trakBoxes = moovBoxes.filter(({ name }) => name === 'trak');
 
             const tracks = trakBoxes.map((trakBoxContainer) => {
@@ -87,20 +88,8 @@ const create = (): Parser => {
 
             const filteredTracks = tracks.filter((t): t is Track => t !== null);
             resolve(filteredTracks);
-        } catch(e) {
-            console.error(e);
-            reject('Failed to parse tracks data');
-        }
-    });
-
-    return {
-        decode,
-        format,
-    };
+        });
+    }
 };
 
-export {
-    SIGNATURE,
-    SIGNATURE_OFFSET,
-    create,
-};
+export default MP4;

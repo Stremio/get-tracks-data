@@ -1,5 +1,5 @@
-import { TrackType } from '@/parser';
-import { Parser, Track } from '@/parser';
+import { Parser, TrackType } from '@/parser';
+import type { Track } from '@/parser';
 import { bufferToInt, parseElements } from './utils';
 import type { Element } from './utils';
 
@@ -43,10 +43,14 @@ const TRACK_TYPE_VALUES: Record<number, TrackType> = {
 const SIGNATURE = '1A45DFA3';
 const SIGNATURE_OFFSET = 0;
 
-const create = (): Parser => {
-    const decode = (buffer: Buffer) => new Promise<Element>((resolve, reject) => {
-        try {
-            const elements = parseElements(buffer);
+class MKV extends Parser {
+    constructor() {
+        super(SIGNATURE, SIGNATURE_OFFSET);
+    }
+
+    _decode(chunk: Buffer) {
+        return new Promise<Element>((resolve, reject) => {
+            const elements = parseElements(chunk);
 
             const segment = elements.find(({ name }) => name === 'Segment');
             if (!segment) return reject();
@@ -57,15 +61,12 @@ const create = (): Parser => {
             if (!tracks) return reject();
 
             resolve(tracks);
-        } catch(e) {
-            console.error(e);
-            reject('Failed to decode buffer');
-        }
-    });
+        });
+    }
 
-    const format = (element: Element) => new Promise<Track[]>((resolve, reject) => {
-        try {
-            const tracksTags = parseElements(element.data);
+    _format(decoded: Element) {
+        return new Promise<Track[]>((resolve, reject) => {
+            const tracksTags = parseElements(decoded.data);
 
             const trackEntries = tracksTags.filter(({ name }) => name === 'TrackEntry');
             if (!trackEntries) return reject();
@@ -102,20 +103,8 @@ const create = (): Parser => {
                 });
 
             resolve(tracks);
-        } catch(e) {
-            console.error(e);
-            reject('Failed to parse tracks data');
-        }
-    });
-
-    return {
-        decode,
-        format,
-    };
+        });
+    }
 };
 
-export {
-    SIGNATURE,
-    SIGNATURE_OFFSET,
-    create,
-};
+export default MKV;
