@@ -86,7 +86,7 @@ class UrlStream extends Readable {
 
             this.contentLength = contentLength;
             this.bytesRead += chunk.length;
-            this.bytesOffset += chunk.length;
+            this.bytesOffset = chunk.length;
             this.push(chunk);
         } catch(e) {
             this.emit('error', e);
@@ -143,7 +143,7 @@ class FileStream extends Readable {
             const chunk = await this._requestRange(range);
 
             this.bytesRead += chunk.length;
-            this.bytesOffset += chunk.length;
+            this.bytesOffset = chunk.length;
             this.push(chunk);
         } catch(e) {
             this.emit('error', e);

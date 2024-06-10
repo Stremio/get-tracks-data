@@ -12,7 +12,7 @@ type Track = {
 };
 
 interface Parser {
-    _decode(chunk: Buffer, onSkip: (start: number, end?: number) => void): Promise<any>;
+    _decode(chunk: Buffer, readChunk: (start: number, length?: number) => void): Promise<any>;
     _format(decoded: any): Promise<Track[]>;
 }
 
@@ -35,9 +35,9 @@ class Parser {
         return Buffer.compare(signatureBuffer, bufferToCompare) === 0;
     }
 
-    async decode(chunk: Buffer, onSkip: (start: number, end?: number) => void) {
+    async decode(chunk: Buffer, readChunk: (start: number, length?: number) => void) {
         try {
-            const decoded = await this._decode(chunk, onSkip);
+            const decoded = await this._decode(chunk, readChunk);
             return Promise.resolve(decoded);
         } catch (e) {
             console.error(e);

@@ -18,17 +18,17 @@ class MP4 extends Parser {
         super(SIGNATURE, SIGNATURE_OFFSET);
     }
 
-    _decode(chunk: Buffer, onSkip: (start: number, end?: number) => void) {
+    _decode(chunk: Buffer, readChunk: (start: number, length?: number) => void) {
         return new Promise<BoxContainer>((resolve) => {
             const boxes = parseBoxes(chunk);
             const moovBox = boxes.find(({ name }) => name === 'moov');
             const mdatBox = boxes.find(({ name }) => name === 'mdat');
 
             if (!moovBox && mdatBox)
-                return onSkip(mdatBox.offset + mdatBox.size);
+                return readChunk(mdatBox.offset + mdatBox.size);
 
             if (moovBox && moovBox.data.length !== moovBox.dataSize)
-                return onSkip(moovBox.offset, moovBox.offset + moovBox.size);
+                return readChunk(moovBox.offset, moovBox.size);
 
             if (moovBox && moovBox.data.length === moovBox.dataSize)
                 return resolve(moovBox);
