@@ -53,17 +53,22 @@ class UrlStream extends Readable {
         const response = await this._request(range);
         this.url = response.responseUrl;
 
+        const error = (reason: string) => {
+            response.destroy();
+            return Promise.reject(reason);
+        };
+
         const contentRange = response.headers?.['content-range'];
         if (!contentRange)
-            return Promise.reject('Failed to retrieve Content-Range from headers');
+            return error('Failed to retrieve Content-Range from headers');
 
         const matches = CONTENT_RANGE_REGEX.exec(contentRange);
         if (!matches)
-            return Promise.reject('Failed to parse range from Content-Range header');
+            return error('Failed to parse range from Content-Range header');
 
         const [,,, contentLength] = matches;
         if (!contentLength)
-            return Promise.reject('Failed to parse length from Content-Range header');
+            return error('Failed to parse length from Content-Range header');
 
         return new Promise<[Buffer, number]>((resolve, reject) => {
             const chunks: Buffer[] = [];
