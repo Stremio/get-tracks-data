@@ -74,11 +74,11 @@ class MP4 extends Parser {
 
                 const STSD = parseSTSDBox(stsdBoxContainer.data);
 
-                const id = TKHD.id;
-                const type = BOX_NAME_TYPE_MAP[tmhdBoxContainer.name];
+                const id = TKHD.id ?? null;
+                const type = BOX_NAME_TYPE_MAP[tmhdBoxContainer.name] ?? null;
                 const lang = MDHD_LANG_NULL_VALUES.includes(MDHD.language) ? null : MDHD.language;
                 const label = HDLR.name.length ? HDLR.name : null;
-                const codec = STSD?.entries?.[0]?.name;
+                const codec = STSD?.entries?.[0]?.name ?? null;
 
                 const track: Track = {
                     id,
