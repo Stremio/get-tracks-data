@@ -45,9 +45,9 @@ try {
 Example of data returned:
 ```js
 [
-  { id: 1, type: 'video', lang: null, codec: 'MPEGH/ISO/HEVC' },
-  { id: 2, type: 'audio', lang: 'spa', codec: 'EAC3' },
-  { id: 3, type: 'text', lang: 'fre', codec: 'TEXT/UTF8' }
+  { id: 1, type: 'video', lang: null, label: 'UHD', codec: 'MPEGH/ISO/HEVC' },
+  { id: 2, type: 'audio', lang: 'spa', label: 'EAC3 Atmos 768 Kbps 5.1', codec: 'EAC3' },
+  { id: 3, type: 'text', lang: 'fre', label: 'FRENCH-SRT Sub', codec: 'TEXT/UTF8' }
 ]
 ```
 

@@ -1,6 +1,6 @@
 import { Parser, TrackType } from '@/parser';
 import type { Track } from '@/parser';
-import { parseBoxes, parseMDHDBox, parseSTSDBox, parseTKHDBox } from './utils';
+import { parseBoxes, parseHDLRBox, parseMDHDBox, parseSTSDBox, parseTKHDBox } from './utils';
 import type { BoxContainer } from './utils';
 
 const SIGNATURE = '66747970';
@@ -52,11 +52,14 @@ class MP4 extends Parser {
                 const mdiaBoxes = parseBoxes(mdiaBoxContainer.data);
 
                 const mdhdBoxContainer = mdiaBoxes.find(({ name }) => name === 'mdhd');
+                const hdlrBoxContainer = mdiaBoxes.find(({ name }) => name === 'hdlr');
                 const minfBoxContainer = mdiaBoxes.find(({ name }) => name === 'minf');
 
-                if (!mdhdBoxContainer || !minfBoxContainer) return null;
+                if (!mdhdBoxContainer || !hdlrBoxContainer || !minfBoxContainer) return null;
 
                 const MDHD = parseMDHDBox(mdhdBoxContainer.data);
+                const HDLR = parseHDLRBox(hdlrBoxContainer.data);
+                
                 const minfBoxes = parseBoxes(minfBoxContainer.data);
 
                 const tmhdBoxContainer = minfBoxes.find(({ name }) => Object.keys(BOX_NAME_TYPE_MAP).includes(name));
@@ -74,12 +77,14 @@ class MP4 extends Parser {
                 const id = TKHD.id;
                 const type = BOX_NAME_TYPE_MAP[tmhdBoxContainer.name];
                 const lang = MDHD_LANG_NULL_VALUES.includes(MDHD.language) ? null : MDHD.language;
+                const label = HDLR.name.length ? HDLR.name : null;
                 const codec = STSD?.entries?.[0]?.name;
 
                 const track: Track = {
                     id,
                     type,
                     lang,
+                    label,
                     codec,
                 };
 

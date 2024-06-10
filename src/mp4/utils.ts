@@ -8,13 +8,13 @@ export type BoxContainer = {
 
 export type Box = {
     versionFlag: number,
+    offset: number,
 };
 
 type TKHDBox = Box & {
     creationTime: number,
     modificationTime: number,
     id: number,
-    offset: number,
 };
 
 type MDHDBox = Box & {
@@ -23,7 +23,11 @@ type MDHDBox = Box & {
     timescale: number,
     duration: number,
     language: string,
-    offset: number,
+};
+
+type HDLR = Box & {
+    handlerType: string,
+    name: string,
 };
 
 type SampleEntry = {
@@ -35,7 +39,6 @@ type SampleEntry = {
 type STSDBox = Box & {
     samples: number,
     entries: SampleEntry[],
-    offset: number,
 };
 
 const parseTKHDBox = (buffer: Buffer, offset = 0): TKHDBox => {
@@ -79,6 +82,23 @@ const parseMDHDBox = (buffer: Buffer, offset = 0): MDHDBox => {
         timescale,
         duration,
         language: languageString,
+        offset,
+    };
+};
+
+const parseHDLRBox = (buffer: Buffer, offset = 0): HDLR => {
+    const versionFlag = buffer.readUInt32BE(offset);
+
+    const handlerTypeOffset = offset + 4 + 4;
+    const handlerType = buffer.subarray(handlerTypeOffset, handlerTypeOffset + 4).toString();
+
+    const nameOffset = handlerTypeOffset + 4 + 12;
+    const name = buffer.subarray(nameOffset, buffer.length - 1).toString();
+    
+    return {
+        versionFlag,
+        handlerType,
+        name,
         offset,
     };
 };
@@ -139,6 +159,7 @@ const parseBoxes = (buffer: Buffer) => {
 export {
     parseTKHDBox,
     parseMDHDBox,
+    parseHDLRBox,
     parseSTSDBox,
     parseBox,
     parseBoxes,

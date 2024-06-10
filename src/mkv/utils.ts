@@ -14,6 +14,7 @@ const ELEMENT_IDS_MAP: Record<string, string> = {
     '83': 'TrackType',
     '22B59C': 'Language',
     '22B59D': 'LanguageBCP47',
+    '536E': 'Name',
     '86': 'CodecID',
 };
 

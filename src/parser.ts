@@ -8,6 +8,7 @@ type Track = {
     id: number | null;
     type: TrackType | null;
     lang: string | null;
+    label: string | null;
     codec: string | null;
 };
 
