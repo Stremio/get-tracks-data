@@ -1,8 +1,11 @@
 import fs from 'fs';
-import http from 'http';
-import https from 'https';
 import { Readable } from 'stream';
+import followRedirects from 'follow-redirects';
+import type { FollowResponse } from 'follow-redirects';
 import type { IncomingMessage, OutgoingHttpHeaders } from 'http';
+
+const http = followRedirects.http;
+const https = followRedirects.https;
 
 const CONTENT_RANGE_REGEX = /bytes (\d+)-(\d+)\/(\d+)/;
 
@@ -32,7 +35,7 @@ class UrlStream extends Readable {
         this.chunkSize = this.readableHighWaterMark;
     }
 
-    _request = (range: number[]): Promise<IncomingMessage> => {
+    _request = (range: number[]): Promise<IncomingMessage & FollowResponse> => {
         return new Promise((resolve, reject) => {
             const { protocol } = new URL(this.url);
 
@@ -48,6 +51,7 @@ class UrlStream extends Readable {
 
     _requestRange = async (range: number[]): Promise<[Buffer, number]> => {
         const response = await this._request(range);
+        this.url = response.responseUrl;
 
         const contentRange = response.headers?.['content-range'];
         if (!contentRange)
