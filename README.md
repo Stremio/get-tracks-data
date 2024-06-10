@@ -13,9 +13,10 @@ npm i get-tracks-data
 
 ### File
 
-```js
-const path = require('path');
-const getTracksData = require('get-tracks-data');
+```ts
+import path from 'path';
+import getTracksData from 'get-tracks-data';
+// const getTracksData = require('get-tracks-data').default; // CommonJS import
 
 const file = path.resolve(__dirname, 'video.mkv');
 
@@ -29,8 +30,9 @@ try {
 
 ### Url
 
-```js
-const getTracksData = require('get-tracks-data');
+```ts
+import getTracksData from 'get-tracks-data';
+// const getTracksData = require('get-tracks-data').default; // CommonJS import
 
 const url = 'https://mywebsite.com/video.mp4';
 
