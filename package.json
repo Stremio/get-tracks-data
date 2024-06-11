@@ -35,13 +35,14 @@
         "require": "./dist/index.cjs"
     },
     "devDependencies": {
-        "@types/follow-redirects": "^1.14.4",
         "@swc/core": "^1.5.25",
+        "@types/follow-redirects": "^1.14.4",
         "@types/node": "^20.14.2",
         "tsup": "^8.1.0",
         "typescript": "^5.4.5"
     },
     "dependencies": {
+        "bignumber.js": "^9.1.2",
         "follow-redirects": "^1.15.6"
     }
 }
