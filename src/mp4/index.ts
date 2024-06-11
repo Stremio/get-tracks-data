@@ -6,9 +6,10 @@ import type { BoxContainer } from './utils';
 const SIGNATURE = '66747970';
 const SIGNATURE_OFFSET = 4;
 
-const BOX_NAME_TYPE_MAP: Record<string, TrackType> = {
-    'vmhd': TrackType.Video,
-    'smhd': TrackType.Audio,
+const HDLR_TYPE_MAP: Record<string, TrackType> = {
+    'vide': TrackType.Video,
+    'soun': TrackType.Audio,
+    'text': TrackType.Text,
 };
 
 const MDHD_LANG_NULL_VALUES = ['und', '```'];
@@ -17,7 +18,7 @@ class MP4 extends Parser {
     constructor() {
         super(SIGNATURE, SIGNATURE_OFFSET);
     }
-
+    
     _decode(chunk: Buffer, readChunk: (start: number, length?: number) => void) {
         return new Promise<BoxContainer>((resolve) => {
             const boxes = parseBoxes(chunk);
@@ -61,11 +62,9 @@ class MP4 extends Parser {
                 const HDLR = parseHDLRBox(hdlrBoxContainer.data);
                 
                 const minfBoxes = parseBoxes(minfBoxContainer.data);
-
-                const tmhdBoxContainer = minfBoxes.find(({ name }) => Object.keys(BOX_NAME_TYPE_MAP).includes(name));
                 const stblBoxContainer = minfBoxes.find(({ name }) => name === 'stbl');
 
-                if (!stblBoxContainer || !tmhdBoxContainer) return null;
+                if (!stblBoxContainer) return null;
 
                 const stblBoxes = parseBoxes(stblBoxContainer.data);
                 const stsdBoxContainer = stblBoxes.find(({ name }) => name === 'stsd');
@@ -75,7 +74,7 @@ class MP4 extends Parser {
                 const STSD = parseSTSDBox(stsdBoxContainer.data);
 
                 const id = TKHD.id ?? null;
-                const type = BOX_NAME_TYPE_MAP[tmhdBoxContainer.name] ?? null;
+                const type = HDLR_TYPE_MAP[HDLR.handlerType] ?? null;
                 const lang = MDHD_LANG_NULL_VALUES.includes(MDHD.language) ? null : MDHD.language;
                 const label = HDLR.name.length ? HDLR.name : null;
                 const codec = STSD?.entries?.[0]?.name ?? null;
