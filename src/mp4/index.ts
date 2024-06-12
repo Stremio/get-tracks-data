@@ -32,23 +32,35 @@ const parseCodec = (STSD: STSDBox) => {
 };
 
 class MP4 extends Parser {
+    offset = 0;
+
     constructor() {
         super(SIGNATURE, SIGNATURE_OFFSET);
     }
-    
+
     _decode(chunk: Buffer, readChunk: (start: number, length?: number) => void) {
         return new Promise<BoxContainer>((resolve) => {
             const boxes = parseBoxes(chunk);
             const moovBox = boxes.find(({ name }) => name === 'moov');
             const mdatBox = boxes.find(({ name }) => name === 'mdat');
+            const freeBox = boxes.find(({ name }) => name === 'free');
 
-            if (!moovBox && mdatBox)
-                return readChunk(mdatBox.offset + mdatBox.size);
+            if (!moovBox && freeBox) {
+                this.offset += freeBox.offset + freeBox.size.toNumber();
+                return readChunk(this.offset);
+            }
 
-            if (moovBox && moovBox.data.length !== moovBox.dataSize)
-                return readChunk(moovBox.offset, moovBox.size);
+            if (!moovBox && mdatBox) {
+                this.offset += mdatBox.offset + mdatBox.size.toNumber();
+                return readChunk(this.offset);
+            }
 
-            if (moovBox && moovBox.data.length === moovBox.dataSize)
+            if (moovBox && moovBox.data.length !== moovBox.dataSize.toNumber()) {
+                this.offset += moovBox.offset;
+                return readChunk(this.offset, moovBox.size.toNumber());
+            }
+
+            if (moovBox && moovBox.data.length === moovBox.dataSize.toNumber())
                 return resolve(moovBox);
         });
     }

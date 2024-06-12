@@ -1,8 +1,10 @@
+import BigNumber from 'bignumber.js';
+
 export type BoxContainer = {
     name: string,
-    size: number,
+    size: BigNumber,
     data: Buffer,
-    dataSize: number,
+    dataSize: BigNumber,
     offset: number,
 };
 
@@ -62,7 +64,7 @@ const parseMDHDBox = (buffer: Buffer, offset = 0): MDHDBox => {
     const modificationTime = buffer.readUInt32BE(offset + 8);
     const timescale = buffer.readUInt32BE(offset + 12);
     const duration = buffer.readUInt32BE(offset + 16);
-    const language = buffer.readUint16BE(offset + 20);
+    const language = buffer.readUInt16BE(offset + 20);
 
     const chars: number[] = [];
     chars[0] = (language >> 10) & 0x1F;
@@ -130,13 +132,19 @@ const parseSTSDBox = (buffer: Buffer, offset = 0): STSDBox => {
 
 const parseBox = (buffer: Buffer, offset = 0): BoxContainer => {
     const size = buffer.readUInt32BE(offset);
+    const bigSize = size === 1 ? BigNumber(buffer.readBigUInt64BE(offset + 8).toString()) : null;
+    
     const name = buffer.subarray(offset + 4, offset + 8).toString();
-    const data = buffer.subarray(offset + 8, offset + size);
-    const dataSize = Math.max(0, size - 8);
+
+    const dataOffset = offset + 8 + (bigSize ? 8 : 0);
+    const _size = bigSize ?? BigNumber(size);
+
+    const data = buffer.subarray(dataOffset, size === 1 ? buffer.length :offset + size);
+    const dataSize = _size.minus(8);
 
     return {
         name,
-        size,
+        size: _size,
         data,
         dataSize,
         offset,
@@ -150,7 +158,7 @@ const parseBoxes = (buffer: Buffer) => {
         const box = parseBox(buffer, offset);
         boxes.push(box);
 
-        offset += box.size;
+        offset += box.size.toNumber();
     }
 
     return boxes;
