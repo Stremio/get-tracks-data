@@ -3,7 +3,7 @@ import MKV from './mkv';
 import MP4 from './mp4';
 import type { Parser, Track } from './parser';
 
-const DEFAULT_CHUNK_SIZE = 10 * 1024 * 1024;
+const DEFAULT_CHUNK_SIZE = 15 * 1024 * 1024;
 
 const useParser = (parsers: Parser[], buffer: Buffer) => {
     return parsers.find((parser) => parser.compare(buffer));
