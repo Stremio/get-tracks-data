@@ -39,7 +39,7 @@ class MP4 extends Parser {
             }
 
             if (moovBox && moovBox.data.length !== moovBox.dataSize.toNumber())
-                return readChunk(moovBox.offset, moovBox.size.toNumber());
+                return readChunk(this.offset + moovBox.offset, moovBox.size.toNumber());
 
             if (moovBox && moovBox.data.length === moovBox.dataSize.toNumber())
                 return resolve(moovBox);
