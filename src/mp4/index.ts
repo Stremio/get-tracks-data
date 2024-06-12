@@ -10,6 +10,7 @@ const HDLR_TYPE_MAP: Record<string, TrackType> = {
     'vide': TrackType.Video,
     'soun': TrackType.Audio,
     'text': TrackType.Text,
+    'sbtl': TrackType.Text,
 };
 
 const HDLR_NAME_NULL_VALUES = [
@@ -19,6 +20,10 @@ const HDLR_NAME_NULL_VALUES = [
 ];
 
 const MDHD_LANG_NULL_VALUES = ['und', '```'];
+
+const parseType = (HDLR: HDLRBox) => {
+    return HDLR_TYPE_MAP[HDLR.handlerType] ?? null;
+};
 
 const parseLabel = (HDLR: HDLRBox) => {
     return HDLR_NAME_NULL_VALUES.includes(HDLR.name) ? null : HDLR.name.length ? HDLR.name : null;
@@ -89,7 +94,7 @@ class MP4 extends Parser {
 
                 const MDHD = parseMDHDBox(mdhdBoxContainer.data);
                 const HDLR = parseHDLRBox(hdlrBoxContainer.data);
-                
+
                 const minfBoxes = parseBoxes(minfBoxContainer.data);
                 const stblBoxContainer = minfBoxes.find(({ name }) => name === 'stbl');
 
@@ -103,7 +108,7 @@ class MP4 extends Parser {
                 const STSD = parseSTSDBox(stsdBoxContainer.data);
 
                 const id = TKHD.id ?? null;
-                const type = HDLR_TYPE_MAP[HDLR.handlerType] ?? null;
+                const type = parseType(HDLR);
                 const lang = MDHD_LANG_NULL_VALUES.includes(MDHD.language) ? null : MDHD.language;
                 const label = parseLabel(HDLR);
                 const codec = parseCodec(STSD);
