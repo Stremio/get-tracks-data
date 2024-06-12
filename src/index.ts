@@ -3,11 +3,10 @@ import MKV from './mkv';
 import MP4 from './mp4';
 import type { Parser, Track } from './parser';
 
-const PARSERS = [new MKV(), new MP4()];
 const DEFAULT_CHUNK_SIZE = 10 * 1024 * 1024;
 
-const useParser = (buffer: Buffer) => {
-    return PARSERS.find((parser) => parser.compare(buffer));
+const useParser = (parsers: Parser[], buffer: Buffer) => {
+    return parsers.find((parser) => parser.compare(buffer));
 };
 
 type Options = {
@@ -17,14 +16,19 @@ type Options = {
 const getTracksData = async (input: string, options?: Options) => {
     const stream = await createStream(input);
 
+    const parsers = [
+        new MKV(),
+        new MP4(),
+    ];
+
     let parser: Parser | undefined = undefined;
     let decoded: any = null;
 
     return new Promise<Track[]>((resolve, reject) => {
-        const onSkip = (start: number, end?: number) => {
+        const readChunk = (start: number, length?: number) => {
             stream.pause();
             stream.bytesOffset = start;
-            stream.chunkSize = end ?? DEFAULT_CHUNK_SIZE;
+            stream.chunkSize = length ?? DEFAULT_CHUNK_SIZE;
             stream.resume();
         };
 
@@ -42,13 +46,13 @@ const getTracksData = async (input: string, options?: Options) => {
             if (options?.maxBytesLimit && stream.bytesRead >= options.maxBytesLimit)
                 return onError(`Reached maxBytesLimit of ${options.maxBytesLimit}`);
 
-            parser = parser ?? useParser(chunk);
+            parser = parser ?? useParser(parsers, chunk);
 
             if (!parser)
                 return onError('This file type is not supported');
 
             parser
-                .decode(chunk, onSkip)
+                .decode(chunk, readChunk)
                 .then(onDecoded)
                 .catch(onError);
         };
