@@ -25,7 +25,7 @@ type MDHDBox = Box & {
     language: string,
 };
 
-type HDLR = Box & {
+export type HDLRBox = Box & {
     handlerType: string,
     name: string,
 };
@@ -86,7 +86,7 @@ const parseMDHDBox = (buffer: Buffer, offset = 0): MDHDBox => {
     };
 };
 
-const parseHDLRBox = (buffer: Buffer, offset = 0): HDLR => {
+const parseHDLRBox = (buffer: Buffer, offset = 0): HDLRBox => {
     const versionFlag = buffer.readUInt32BE(offset);
 
     const handlerTypeOffset = offset + 4 + 4;

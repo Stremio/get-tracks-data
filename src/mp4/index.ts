@@ -1,7 +1,7 @@
 import { Parser, TrackType } from '@/parser';
 import type { Track } from '@/parser';
 import { parseBoxes, parseHDLRBox, parseMDHDBox, parseSTSDBox, parseTKHDBox } from './utils';
-import type { BoxContainer, STSDBox } from './utils';
+import type { BoxContainer, HDLRBox, STSDBox } from './utils';
 
 const SIGNATURE = '66747970';
 const SIGNATURE_OFFSET = 4;
@@ -12,7 +12,17 @@ const HDLR_TYPE_MAP: Record<string, TrackType> = {
     'text': TrackType.Text,
 };
 
+const HDLR_NAME_NULL_VALUES = [
+    'VideoHandler',
+    'SoundHandler',
+    'SubtitleHandler',
+];
+
 const MDHD_LANG_NULL_VALUES = ['und', '```'];
+
+const parseLabel = (HDLR: HDLRBox) => {
+    return HDLR_NAME_NULL_VALUES.includes(HDLR.name) ? null : HDLR.name.length ? HDLR.name : null;
+};
 
 const parseCodec = (STSD: STSDBox) => {
     const codec = STSD?.entries?.[0]?.name ?? null;
@@ -83,7 +93,7 @@ class MP4 extends Parser {
                 const id = TKHD.id ?? null;
                 const type = HDLR_TYPE_MAP[HDLR.handlerType] ?? null;
                 const lang = MDHD_LANG_NULL_VALUES.includes(MDHD.language) ? null : MDHD.language;
-                const label = HDLR.name.length ? HDLR.name : null;
+                const label = parseLabel(HDLR);
                 const codec = parseCodec(STSD);
 
                 const track: Track = {
