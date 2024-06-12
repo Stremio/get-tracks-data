@@ -24,6 +24,12 @@ const parseLanguage = (language?: Element) => {
     return lang === 'und' ? null : lang;
 };
 
+const parseName = (name?: Element) => {
+    if (!name) return null;
+
+    return name.data.toString();
+};
+
 const parseCodecID = (codecID?: Element) => {
     if (!codecID) return null;
 
@@ -94,7 +100,7 @@ class MKV extends Parser {
                     const id = parseTrackNumber(trackNumber);
                     const type = parseTrackType(trackType);
                     const lang = parseLanguage(language) ?? parseLanguage(languageBCP47);
-                    const label = parseLanguage(name);
+                    const label = parseName(name);
                     const codec = parseCodecID(codecID);
 
                     return {
