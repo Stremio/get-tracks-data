@@ -38,7 +38,7 @@ type SampleEntry = {
     data: Buffer,
 };
 
-type STSDBox = Box & {
+export type STSDBox = Box & {
     samples: number,
     entries: SampleEntry[],
 };
