@@ -38,8 +38,10 @@ class MP4 extends Parser {
                 return readChunk(this.offset);
             }
 
-            if (moovBox && moovBox.data.length !== moovBox.dataSize.toNumber())
-                return readChunk(this.offset + moovBox.offset, moovBox.size.toNumber());
+            if (moovBox && moovBox.data.length !== moovBox.dataSize.toNumber()) {
+                this.offset += moovBox.offset;
+                return readChunk(this.offset, moovBox.size.toNumber());
+            }
 
             if (moovBox && moovBox.data.length === moovBox.dataSize.toNumber())
                 return resolve(moovBox);
