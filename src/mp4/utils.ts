@@ -9,7 +9,7 @@ export type BoxContainer = {
 };
 
 export type Box = {
-    versionFlag: number,
+    version: number,
     offset: number,
 };
 
@@ -19,11 +19,7 @@ type TKHDBox = Box & {
     id: number,
 };
 
-type MDHDBox = Box & {
-    creationTime: number,
-    modificationTime: number,
-    timescale: number,
-    duration: number,
+export type MDHDBox = Box & {
     language: string,
 };
 
@@ -44,13 +40,14 @@ export type STSDBox = Box & {
 };
 
 const parseTKHDBox = (buffer: Buffer, offset = 0): TKHDBox => {
-    const versionFlag = buffer.readUInt32BE(offset);
+    const version = buffer[offset];
+
     const creationTime = buffer.readUInt32BE(offset + 4);
     const modificationTime = buffer.readUInt32BE(offset + 8);
     const id = buffer.readUInt32BE(offset + 12);
 
     return {
-        versionFlag,
+        version,
         creationTime,
         modificationTime,
         id,
@@ -59,12 +56,10 @@ const parseTKHDBox = (buffer: Buffer, offset = 0): TKHDBox => {
 };
 
 const parseMDHDBox = (buffer: Buffer, offset = 0): MDHDBox => {
-    const versionFlag = buffer.readUInt32BE(offset);
-    const creationTime = buffer.readUInt32BE(offset + 4);
-    const modificationTime = buffer.readUInt32BE(offset + 8);
-    const timescale = buffer.readUInt32BE(offset + 12);
-    const duration = buffer.readUInt32BE(offset + 16);
-    const language = buffer.readUInt16BE(offset + 20);
+    const version = buffer[offset];
+
+    const languageOffset = offset + (version === 1 ? 32 : 20);
+    const language = buffer.readUInt16BE(languageOffset);
 
     const chars: number[] = [];
     chars[0] = (language >> 10) & 0x1F;
@@ -78,18 +73,14 @@ const parseMDHDBox = (buffer: Buffer, offset = 0): MDHDBox => {
     );
 
     return {
-        versionFlag,
-        creationTime,
-        modificationTime,
-        timescale,
-        duration,
+        version,
         language: languageString,
         offset,
     };
 };
 
 const parseHDLRBox = (buffer: Buffer, offset = 0): HDLRBox => {
-    const versionFlag = buffer.readUInt32BE(offset);
+    const version = buffer[offset];
 
     const handlerTypeOffset = offset + 4 + 4;
     const handlerType = buffer.subarray(handlerTypeOffset, handlerTypeOffset + 4).toString();
@@ -98,7 +89,7 @@ const parseHDLRBox = (buffer: Buffer, offset = 0): HDLRBox => {
     const name = buffer.subarray(nameOffset, buffer.length - 1).toString();
     
     return {
-        versionFlag,
+        version,
         handlerType,
         name,
         offset,
@@ -106,7 +97,8 @@ const parseHDLRBox = (buffer: Buffer, offset = 0): HDLRBox => {
 };
 
 const parseSTSDBox = (buffer: Buffer, offset = 0): STSDBox => {
-    const versionFlag = buffer.readUInt32BE(offset);
+    const version = buffer[offset];
+
     const samples = buffer.readUInt32BE(offset + 4);
 
     const entries: SampleEntry[] = [];
@@ -123,7 +115,7 @@ const parseSTSDBox = (buffer: Buffer, offset = 0): STSDBox => {
     };
 
     return {
-        versionFlag,
+        version,
         samples,
         entries,
         offset,
