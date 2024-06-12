@@ -22,7 +22,6 @@ const getTracksData = async (input: string, options?: Options) => {
     ];
 
     let parser: Parser | undefined = undefined;
-    let decoded: any = null;
 
     return new Promise<Track[]>((resolve, reject) => {
         const readChunk = (start: number, length?: number) => {
@@ -32,9 +31,13 @@ const getTracksData = async (input: string, options?: Options) => {
             stream.resume();
         };
 
-        const onDecoded = (data: any) => {
+        const onDecoded = (decoded: any) => {
             stream.destroy();
-            decoded = data;
+
+            parser && parser
+                .format(decoded)
+                .then(resolve)
+                .catch(onError);
         };
 
         const onError = (reason: string) => {
@@ -57,16 +60,8 @@ const getTracksData = async (input: string, options?: Options) => {
                 .catch(onError);
         };
 
-        const onClose = async () => {
-            parser && parser
-                .format(decoded)
-                .then(resolve)
-                .catch(onError);
-        };
-
         stream
             .on('error', onError)
-            .on('close', onClose)
             .on('data', onData);
     });
 };
