@@ -1,4 +1,5 @@
 import BigNumber from 'bignumber.js';
+import { bufferToInt } from '@/utils';
 
 export type BoxContainer = {
     name: string,
@@ -124,9 +125,11 @@ const parseSTSDBox = (buffer: Buffer, offset = 0): STSDBox => {
 
 const parseBox = (buffer: Buffer, offset = 0): BoxContainer => {
     const size = buffer.readUInt32BE(offset);
-    const bigSize = size === 1 ? BigNumber(buffer.readBigUInt64BE(offset + 8).toString()) : null;
     
     const name = buffer.subarray(offset + 4, offset + 8).toString();
+
+    const bigSizeOffset = offset + 8;
+    const bigSize = size === 1 ? BigNumber(bufferToInt(buffer.subarray(bigSizeOffset, bigSizeOffset + 8))) : null;
 
     const dataOffset = offset + 8 + (bigSize ? 8 : 0);
     const _size = bigSize ?? BigNumber(size);

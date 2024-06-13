@@ -1,3 +1,5 @@
+import { bitsToBytes, bufferToHex, byteToBits } from '@/utils';
+
 export type Element = {
     name: string,
     size: number,
@@ -17,14 +19,6 @@ const ELEMENT_IDS_MAP: Record<string, string> = {
     '536E': 'Name',
     '86': 'CodecID',
 };
-
-const byteToBits = (byte: number) => byte.toString(2).padStart(8, '0');
-const bitsToBytes = (bits: string) => parseInt(bits, 2);
-const bufferToInt = (buffer: Buffer) => parseInt(buffer.toString('hex'), 16);
-const bufferToHex = (buffer: Buffer, start: number, length: number) => buffer
-    .subarray(start, start + length)
-    .toString('hex')
-    .toUpperCase();
 
 const readVarInt = (buffer: Buffer, offset = 0) => {
     const firstByte = buffer[offset];
@@ -79,6 +73,5 @@ const parseElements = (buffer: Buffer) => {
 };
 
 export {
-    bufferToInt,
     parseElements,
 };

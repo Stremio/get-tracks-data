@@ -1,6 +1,7 @@
 import { Parser, TrackType } from '@/parser';
 import type { Track } from '@/parser';
-import { bufferToInt, parseElements } from './utils';
+import { bufferToInt } from '@/utils';
+import { parseElements } from './utils';
 import type { Element } from './utils';
 
 const parseTrackNumber = (trackNumber?: Element) => {
