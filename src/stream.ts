@@ -10,12 +10,7 @@ const https = followRedirects.https;
 const CONTENT_RANGE_REGEX = /bytes (\d+)-(\d+)\/(\d+)/;
 
 const isUrl = (url: string) => {
-    try {
-        new URL(url);
-        return true;
-    } catch (e) {
-        return false;
-    }
+    return url.startsWith('http://') || url.startsWith('https://');
 };
 
 class UrlStream extends Readable {
