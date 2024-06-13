@@ -32,7 +32,7 @@ class UrlStream extends Readable {
 
     _request = (range: number[]): Promise<IncomingMessage & FollowResponse> => {
         return new Promise((resolve, reject) => {
-            const { protocol } = new URL(this.url);
+            const [protocol] = this.url.split('//');
 
             const headers: OutgoingHttpHeaders = {
                 'range': `bytes=${range[0]}-${range[1]}`,
