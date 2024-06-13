@@ -42,7 +42,6 @@
         "typescript": "^5.4.5"
     },
     "dependencies": {
-        "bignumber.js": "^9.1.2",
         "follow-redirects": "^1.15.6"
     }
 }

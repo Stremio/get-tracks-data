@@ -1,11 +1,10 @@
-import BigNumber from 'bignumber.js';
 import { bufferToInt } from '@/utils';
 
 export type BoxContainer = {
     name: string,
-    size: BigNumber,
+    size: number,
     data: Buffer,
-    dataSize: BigNumber,
+    dataSize: number,
     offset: number,
 };
 
@@ -129,13 +128,13 @@ const parseBox = (buffer: Buffer, offset = 0): BoxContainer => {
     const name = buffer.subarray(offset + 4, offset + 8).toString();
 
     const bigSizeOffset = offset + 8;
-    const bigSize = size === 1 ? BigNumber(bufferToInt(buffer.subarray(bigSizeOffset, bigSizeOffset + 8))) : null;
+    const bigSize = size === 1 ? bufferToInt(buffer.subarray(bigSizeOffset, bigSizeOffset + 8)) : null;
 
     const dataOffset = offset + 8 + (bigSize ? 8 : 0);
-    const _size = bigSize ?? BigNumber(size);
+    const _size = bigSize ?? size;
 
     const data = buffer.subarray(dataOffset, size === 1 ? buffer.length :offset + size);
-    const dataSize = _size.minus(8);
+    const dataSize = _size - 8;
 
     return {
         name,
@@ -153,7 +152,7 @@ const parseBoxes = (buffer: Buffer) => {
         const box = parseBox(buffer, offset);
         boxes.push(box);
 
-        offset += box.size.toNumber();
+        offset += box.size;
     }
 
     return boxes;
