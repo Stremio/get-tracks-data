@@ -51,7 +51,7 @@ class MP4 extends Parser {
         return new Promise<BoxContainer>((resolve) => {
             const boxes = parseBoxes(chunk);
             const moovBox = boxes.find(({ name }) => name === 'moov');
-            const endBox = boxes.findLast(({ name }) => name !== 'moov');
+            const endBox = boxes.slice().reverse().find(({ name }) => name !== 'moov');
 
             if (!moovBox && endBox) {
                 this.offset += endBox.offset + endBox.size.toNumber();
