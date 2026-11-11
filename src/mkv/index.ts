@@ -100,7 +100,7 @@ class MKV extends Parser {
                 .map(({ trackNumber, trackType, language, languageBCP47, name, codecID }) => {
                     const id = parseTrackNumber(trackNumber);
                     const type = parseTrackType(trackType);
-                    const lang = parseLanguage(language) ?? parseLanguage(languageBCP47);
+                    const lang = parseLanguage(languageBCP47) ?? parseLanguage(language);
                     const label = parseName(name);
                     const codec = parseCodecID(codecID);
 
